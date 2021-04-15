@@ -5,9 +5,9 @@ import chess
 import random
 import numpy as np
 
-from Reinforcement_Learning.Monte_Carlo_Search_Tree.self_play import start
-from Reinforcement_Learning.Monte_Carlo_Search_Tree.MCTS_main import agent_MCTS
-from Reinforcement_Learning.Monte_Carlo_Search_Tree.deep_structure import Neural_Network
+from Monte_Carlo_Search_Tree.self_play import start
+from Monte_Carlo_Search_Tree.MCTS_main import agent_MCTS
+from Monte_Carlo_Search_Tree.deep_structure import Neural_Network
 
 class Train_Network():
 
@@ -94,10 +94,10 @@ class Train_Network():
 
         dic_win = defaultdict(int)
         for i in range(10):
-            winner = self.game.start_play(current_agent, best_agent, start_player=i % 2) ###MISSING TODO
+            winner = self.play.start_play(current_agent, best_agent, start_player=i % 2) 
             dic_win[winner] += 1
 
-        return ( 1.0*( dic_win[1] + 0.5*dic_win[-1] ) / 10 ) ###WRONG
+        return ((dic_win["p2"] )/10)
 
 
     def run(self):
