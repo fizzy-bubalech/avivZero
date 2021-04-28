@@ -5,9 +5,9 @@ import chess
 import random
 import numpy as np
 
-from Monte_Carlo_Search_Tree.self_play import start
-from Monte_Carlo_Search_Tree.MCTS_main import agent_MCTS
-from Monte_Carlo_Search_Tree.deep_structure import Neural_Network
+from Reinforcement_Learning.Monte_Carlo_Search_Tree.self_play import start
+from Reinforcement_Learning.Monte_Carlo_Search_Tree.MCTS_main import agent_MCTS
+from Reinforcement_Learning.Monte_Carlo_Search_Tree.deep_structure import Neural_Network
 
 class Train_Network():
 
@@ -107,6 +107,7 @@ class Train_Network():
         '''
 
         for i in range(self.batch_number):
+            print(i)
             print(f"batch number: {i}")
 
             self.data_storing() #run 512 self games 

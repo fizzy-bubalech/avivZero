@@ -2,6 +2,7 @@ import numpy as np
 
 #Import all of the necessary Torch dependencies
 import torch
+from torch import FloatTensor
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as functional
@@ -122,7 +123,7 @@ class Neural_Network():
 
         if self.training == True:
             group_of_states = Variable(torch.FloatTensor(group_of_states).cuda())
-            probabilities = Variable(torch.FloatTensor(probabilities).cuda())
+            probabilities = Variable(torch.float(probabilities).cuda())
             winner = Variable(torch.FloatTensor(winner).cuda())
         else:
             group_of_states = Variable(torch.FloatTensor(group_of_states))
@@ -177,7 +178,7 @@ class Neural_Network():
         parameters = self.Neural_Network_Architecture.state_dict()
         return parameters
 
-def learning_rate(optimizer, rate):
+def set_learning_rate(optimizer, rate):
     #The learning rate is set to the input values
     for param_group in optimizer.param_groups:
         param_group['lr'] = rate
