@@ -37,25 +37,22 @@ class MCTS(object):
         The job of this function is to traverse down until a leaf node is hit, get the value
         and then backpropagate the values up the tree
         '''
-        while(1):
+        while(True):
             answer = self.root.is_leaf(last)
-            print(f"last move:{last}")
             if answer:
-                print("stuck")
                 break
-            #print("stuck")
             # Greedily select next move.
             move, node = self.root.traverse_tree(5)
+            #print(self.root.children.items())
             move = chess.Move.from_uci(f"{move}")
             
-            #print(f"THE MOVE: {move}")
-            #print(f"OF TYPE:str({type(move)})")
-            #print(state)
+            print(state)
             state.push(move)
+            
             self.root = node
+
+        
         probability, leaf_value = self.Network(state)
-        #print("Im free!!!!!!!!!!!!")
-        #print(state)
         s = start(state)
         end, winner = s.results(state, state.result())
 
@@ -74,16 +71,16 @@ class MCTS(object):
         The job of this function is to return available moves, along with
         thier probabilities
         '''
-        print("did move_probabilities")
-        for n in range(10000):
+        
+        for n in range(1):
             #Deepcopy is very slow, but I found it works the best
             state_copy = copy.deepcopy(state)
-            if(state_copy != chess.Board()):
-                print(f"last move:{state_copy.peek()}")
-                self.iteration_of_MCTS(state_copy, state.peek())
-            else:
-                print("im trash")
+            if(state_copy == chess.Board()):
+                #print("!!!!!!!!FIRST!!!!!!!")
                 self.iteration_of_MCTS(state_copy)
+            else:
+                #print("Not First")
+                self.iteration_of_MCTS(state_copy, state.peek())
         # calc the move probabilities based on visit counts at the root node
 
         act_visits = [(act, node.N) for act, node in self.root.children.items()]

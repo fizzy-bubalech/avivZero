@@ -4,6 +4,7 @@ from collections import defaultdict, deque
 import chess
 import random
 import numpy as np
+import time
 
 from Reinforcement_Learning.Monte_Carlo_Search_Tree.self_play import start
 from Reinforcement_Learning.Monte_Carlo_Search_Tree.MCTS_main import agent_MCTS
@@ -22,7 +23,7 @@ class Train_Network():
         self.playout = 400
         self.Cpuct_value = 5
 
-        self.batch_size = 512
+        self.batch_size = 15
         self.batch_number = 1500
         self.play_batch_size = 1
         self.buffer = deque(maxlen=10000)
@@ -47,20 +48,27 @@ class Train_Network():
         The goal of this function is to loop, and collect the data
         from the matches of self-play
         '''
+        
         for i in range(self.batch_size):
-            winner, data = self.play.start_self_play( self.agent, temperature=self.temperature )
-            data = list(data)[:]
-
+            time_start = time.time()
+            winner, data = self.play.start_self_play(self.agent, temperature=self.temperature)
+            data = list(data)
+            print(data)
             self.episode_len = len(data)
             self.buffer.extend(data)
+            print(f"Game {i} completed in {time.time()-time_start}")
+            print(f"Data buffer length:{len(self.buffer)}")
 
     def update(self):
         '''
         The job of this function is to update the Neural Network, in order for it to
         learn and get better over time
         '''
-        small_batch = random.sample(self.buffer, self.batch_size)
+        print(self.batch_size)
+        print(len(self.buffer))
+        small_batch = random.sample(self.buffer, self.batch_size-1)
         states = [data[0] for data in small_batch]
+        print(f"state:{states[0]}")
         probabilities = [data[1] for data in small_batch]
         winner_batch = [data[2] for data in small_batch]
         old_probabilities, old_values = self.Neural_Net.move_probabilities(states)
@@ -107,6 +115,7 @@ class Train_Network():
         '''
 
         for i in range(self.batch_number):
+            print("IN GAME STATE > RUN")
             print(i)
             print(f"batch number: {i}")
 

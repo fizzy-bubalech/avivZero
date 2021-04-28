@@ -34,6 +34,7 @@ class start():
         The job of this function is to check if the self-play game is finished or not
         '''
         if state.is_game_over() == True:
+            print(f"Board results:{board_results}")
 
             if board_results =='*':
                 return False, -1
@@ -70,9 +71,10 @@ class start():
             This starts the self-play when training the Model
             '''
 
-            states, mcts_probs, live_agents = ['p1','p2'], [], []
+            states, mcts_probs, live_agents = [], [], ['p1','p2']
 
             while True:
+                #print("in self play while loop line 76")
                 move, probability_of_moves = player.choose_move(self.board, temperature = temperature, probability = 1)
 
                 states.append(self.current_state(self.board))
@@ -83,13 +85,20 @@ class start():
 
                 end, winner = self.results(self.board, self.board.result())
                 if end:
+                    #print("In IF -------------------------------")
                     winner_outcome = np.zeros(len(live_agents))
+                    print(f"The winner {winner}")
                     if winner != -1:
                         winner_outcome[np.array(live_agents) == winner] = 1.0
                         winner_outcome[np.array(live_agents) != winner] = -1.0
+                    else:
+                        winner_outcome = [0.5,0.5]
                     self.board.reset()
                     player.reset_player()
-                    print(states)
+                    print(len(states))
+                    print(len(mcts_probs))
+                    print(winner_outcome)
+                    print(list(zip(states, mcts_probs, winner_outcome)))
                     return winner, zip(states, mcts_probs, winner_outcome)
     def start_play(self, player, player1, start_player,temperature=1e-3):
             '''
