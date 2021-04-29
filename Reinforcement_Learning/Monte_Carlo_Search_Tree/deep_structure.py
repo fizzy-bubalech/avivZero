@@ -82,7 +82,7 @@ class Neural_Network():
         index = 0
 
         #This is the training state, coded and reshaped in order to fit into the Neural Network
-        reshaped_state = np.ascontiguousarray( start(board).current_state( board ).reshape(-1, 4, 6, 3) )
+        reshaped_state = np.ascontiguousarray( start(board).current_state( board ).view(-1, 4, 6, 3) )
 
         #Gets all of the possible legal moves from this current state
         legal_positions = list(board.legal_moves)
@@ -171,7 +171,7 @@ class Neural_Network():
         '''
         print("SAVING THE MODEL")
 
-        current_values = self.get_policy_param()  # get model params
+        current_values = self.parameters()  # get model params
         torch.save(current_values, file)
 
     def parameters(self):
