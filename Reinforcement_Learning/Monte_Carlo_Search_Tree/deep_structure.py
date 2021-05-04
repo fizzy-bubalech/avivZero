@@ -25,13 +25,16 @@ class Neural_Network_Architecture(nn.Module):
 
         #Initializes the common layers
         self.conv1 = nn.Conv2d(4, 32, kernel_size=3, padding=1)
+        torch.nn.init.normal_(self.conv1.weight)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        torch.nn.init.normal_(self.conv2.weight)
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        torch.nn.init.normal_(self.conv3.weight)
 
         self.act_conv1 = nn.Conv2d(128, 4, kernel_size=1)
         self.val_conv1 = nn.Conv2d(128, 2, kernel_size=1)
 
-        self.act_fc1 = nn.Linear(72, 18)
+        self.act_fc1 = nn.Linear(72, 20)
         self.val_fc1 = nn.Linear(36, 64)
         self.val_fc2 = nn.Linear(64, 1)
 
@@ -50,6 +53,7 @@ class Neural_Network_Architecture(nn.Module):
         val_out = val_out.view(-1, 36)
         val_out = functional.relu(self.val_fc1(val_out))
         val_out = functional.tanh(self.val_fc2(val_out))
+
 
         return pol_out, val_out
 
@@ -80,20 +84,23 @@ class Neural_Network():
         list_of_tuples = []
         tuple = []
         index = 0
-
+        
         #This is the training state, coded and reshaped in order to fit into the Neural Network
-        reshaped_state = np.ascontiguousarray( start(board).current_state( board ).view(-1, 4, 6, 3) )
+        reshaped_state = np.ascontiguousarray(start(board).current_state(board).reshape((-1, 4, 6, 3)) )
 
         #Gets all of the possible legal moves from this current state
         legal_positions = list(board.legal_moves)
         #print(f"List of legal moves :{legal_positions}\n______________________________")
 
         if self.training == True:
+            #print(f"This is the size of the state_score tensor:\n{Variable( torch.from_numpy(reshaped_state) ).cuda().float().size()}")
             log_act_probs, value = self.Neural_Network_Architecture( Variable( torch.from_numpy(reshaped_state) ).cuda().float() )
+            #print(f"This is the size of the log_act_probs tensor:{log_act_probs.size()}")
             act_probs = np.exp(log_act_probs.data.cpu().numpy().flatten())
 
         else:
             log_act_probs, value = self.Neural_Network_Architecture( Variable( torch.from_numpy(reshaped_state) ).float() )
+
             act_probs = np.exp(log_act_probs.data.numpy().flatten())
 
         '''
@@ -113,20 +120,20 @@ class Neural_Network():
         return list_of_tuples, act_probs
 
     def train_network(self, group_of_states, probabilities, winner, learning_rate):
-        '''
+        r"""
         The job of this function is to train the Neural Network, so it learns over time
         and can adjust it's parameters in order to make better 'judgements'
-        '''
+        """
         self.optimizer.zero_grad()
         #Set the learning rate of the Network
         set_learning_rate(self.optimizer, learning_rate)
 
         if self.training == True:
-            group_of_states = Variable(torch.FloatTensor(group_of_states).cuda())
-            probabilities = Variable(torch.float(probabilities).cuda())
+            group_of_states = Variable(torch.FloatTensor(group_of_states).cuda().reshape((-1,4,6,3)))
+            probabilities = Variable(torch.FloatTensor(probabilities).cuda())
             winner = Variable(torch.FloatTensor(winner).cuda())
         else:
-            group_of_states = Variable(torch.FloatTensor(group_of_states))
+            group_of_states = Variable(torch.FloatTensor(group_of_states).reshape((-1,4,6,3)))
             probabilities = Variable(torch.FloatTensor(probabilities))
             winner = Variable(torch.FloatTensor(winner))
 
@@ -140,30 +147,58 @@ class Neural_Network():
 
         entropy = -torch.mean( torch.sum( torch.exp(log_act_probs) * log_act_probs, 1 ) )
 
-        return loss.data[0], entropy.data[0]
+        return loss.item(), entropy.item()
 
     def move_probabilities(self, group_of_states):
         '''
         The job of this function is to take a bunch of states, and
         return the probability of taking each state
         '''
+
         if self.training == True:
-            group_of_states = Variable(torch.FloatTensor(group_of_states).cuda())
+            group_of_states = Variable(torch.FloatTensor(group_of_states).cuda().reshape((-1,4,6,3)))
             log_act_probs, value = self.Neural_Network_Architecture(group_of_states)
             probabilities = np.exp(log_act_probs.data.cpu().numpy())
 
+
+            #print(len(probabilities))
+
             return probabilities, value.data.cpu().numpy()
         else:
-            group_of_states = Variable(torch.FloatTensor(group_of_states))
+            group_of_states = Variable(torch.FloatTensor(group_of_states).reshape((-1,4,6,3)))
             '''
             The next two lines of code are repeated from above, but are needed because the
             return is different if using a GPU or CPU
             '''
             log_act_probs, value = self.Neural_Network_Architecture(group_of_states)
+            probabilities = np.exp(log_act_probs.data.numpy())
+
+            return probabilities, value.data.numpy()
+
+
+
+    def simple_probs_values(self, state):
+
+        reshaped_state = np.ascontiguousarray(state.reshape((-1, 4, 6, 3)))
+
+        if( self.training == True):
+            group_of_states = Variable(torch.FloatTensor(reshaped_state).cuda())
+            log_act_probs, value = self.Neural_Network_Architecture(reshaped_state)
+            probabilities = np.exp(log_act_probs.data.cpu().numpy())
+
+            return probabilities, value.data.cpu().numpy()
+        else:
+            group_of_states = Variable(torch.FloatTensor(reshaped_state))
+            '''
+            The next two lines of code are repeated from above, but are needed because the
+            return is different if using a GPU or CPU
+            '''
+            log_act_probs, value = self.Neural_Network_Architecture(reshaped_state)
             probabilities = np.exp(log_act_probs.data.cpu().numpy())
 
             return probabilities, value.data.numpy()
 
+        
     def save_network(self, file):
         '''
         The job of this function is the save the Neural Network, in order to continue it's training,
@@ -173,6 +208,17 @@ class Neural_Network():
 
         current_values = self.parameters()  # get model params
         torch.save(current_values, file)
+
+    def load_network(self,file):
+        """ 
+        The job of this function is to load a specific model into the Neural Network. 
+        """
+        print("LOADING THE MODEL")
+        model = self.Neural_Network_Architecture
+        model.load_state_dict(torch.load(file))
+        model.eval()    
+
+
 
     def parameters(self):
         parameters = self.Neural_Network_Architecture.state_dict()

@@ -34,7 +34,6 @@ class start():
         The job of this function is to check if the self-play game is finished or not
         '''
         if state.is_game_over() == True:
-            print(f"Board results:{board_results}")
 
             if board_results =='*':
                 return False, -1
@@ -78,7 +77,6 @@ class start():
                 move, probability_of_moves = player.choose_move(self.board, temperature = temperature, probability = 1)
 
                 states.append(self.current_state(self.board))
-
                 mcts_probs.append(probability_of_moves)
                 move = chess.Move.from_uci(str(move))
                 self.board.push(move)
@@ -87,7 +85,6 @@ class start():
                 if end:
                     #print("In IF -------------------------------")
                     winner_outcome = np.zeros(len(live_agents))
-                    print(f"The winner {winner}")
                     if winner != -1:
                         winner_outcome[np.array(live_agents) == winner] = 1.0
                         winner_outcome[np.array(live_agents) != winner] = -1.0
@@ -95,11 +92,14 @@ class start():
                         winner_outcome = [0.5,0.5]
                     self.board.reset()
                     player.reset_player()
-                    print(len(states))
-                    print(len(mcts_probs))
-                    print(winner_outcome)
-                    print(list(zip(states, mcts_probs, winner_outcome)))
+                    #print(len(states))
+                    #print(len(mcts_probs))
+                    #print(winner_outcome)
+                    #print(list(zip(states, mcts_probs, winner_outcome)))
                     return winner, zip(states, mcts_probs, winner_outcome)
+
+
+
     def start_play(self, player, player1, start_player,temperature=1e-3):
             '''
             This starts two mcts agents playing against each other 
@@ -131,5 +131,5 @@ class start():
 
                     player.reset_player()
                     self.board.reset()
-                    print(states)
+                    #print(states)
                     return winner, zip(states, mcts_probs, winner_outcome)

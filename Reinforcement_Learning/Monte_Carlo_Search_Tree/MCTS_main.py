@@ -33,10 +33,10 @@ class MCTS(object):
         #self.root.leaf_expansion(probability)
 
     def iteration_of_MCTS(self, state, last = 0):
-        '''
+        """
         The job of this function is to traverse down until a leaf node is hit, get the value
         and then backpropagate the values up the tree
-        '''
+        """
         while(True):
             answer = self.root.is_leaf(last)
             if answer:
@@ -46,7 +46,7 @@ class MCTS(object):
             #print(self.root.children.items())
             move = chess.Move.from_uci(f"{move}")
             
-            print(state)
+            #print(state)
             state.push(move)
             
             self.root = node

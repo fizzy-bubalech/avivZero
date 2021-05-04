@@ -23,20 +23,21 @@ class Train_Network():
         self.playout = 400
         self.Cpuct_value = 5
 
-        self.batch_size = 15
+        self.batch_size = 256
         self.batch_number = 1500
         self.play_batch_size = 1
         self.buffer = deque(maxlen=10000)
 
         self.epochs = 5
         self.goal = 0.02
-        self.check = 50
+        self.check = 2
         self.win = 0.0
         self.mcts_play = 1000
 
         ''' Change to FALSE if you want to start training from scratch '''
         if True:
             self.Neural_Net = Neural_Network()
+            self.Neural_Net.load_network("current_policy.model")
         else:
             # start training from a new policy-value net
             self.Neural_Net = Neural_Network()
@@ -50,25 +51,21 @@ class Train_Network():
         '''
         
         for i in range(self.batch_size):
-            time_start = time.time()
+            
             winner, data = self.play.start_self_play(self.agent, temperature=self.temperature)
             data = list(data)
-            print(data)
             self.episode_len = len(data)
             self.buffer.extend(data)
-            print(f"Game {i} completed in {time.time()-time_start}")
-            print(f"Data buffer length:{len(self.buffer)}")
+            #print(f"Game {i} completed in {time.time()-time_start}")
+            #print(f"Data buffer length:{len(self.buffer)}")
 
     def update(self):
         '''
         The job of this function is to update the Neural Network, in order for it to
         learn and get better over time
         '''
-        print(self.batch_size)
-        print(len(self.buffer))
         small_batch = random.sample(self.buffer, self.batch_size-1)
         states = [data[0] for data in small_batch]
-        print(f"state:{states[0]}")
         probabilities = [data[1] for data in small_batch]
         winner_batch = [data[2] for data in small_batch]
         old_probabilities, old_values = self.Neural_Net.move_probabilities(states)
@@ -96,16 +93,21 @@ class Train_Network():
 
         This is done in AlphaZero.
         '''
+        current_network = Neural_Network()
+        current_network.load_network("current_policy.model")
+        best_current = Neural_Network()
+        best_current.load_network("best_policy.model")
 
-        current_agent = agent_MCTS(self.Neural_Net.state_score)
-        best_agent = agent_MCTS(self.Neural_Net.state_score)
+        current_agent = agent_MCTS(current_network.state_score)
+        best_agent = agent_MCTS(best_current.state_score)
 
         dic_win = defaultdict(int)
-        for i in range(10):
-            winner = self.play.start_play(current_agent, best_agent, start_player=i % 2) 
+        n_runs = 10
+        for i in range(n_runs):
+            winner, data= self.play.start_play(current_agent, best_agent, start_player=i % 2) 
             dic_win[winner] += 1
-
-        return ((dic_win["p2"] )/10)
+        print(dic_win)
+        return ((dic_win["p1"] )/n_runs)
 
 
     def run(self):
@@ -113,33 +115,37 @@ class Train_Network():
         The job of this function is to bring everything together and be the 'meeting grounds'
         for all of the other functions and run them simultaneously, training the model
         '''
-
+        print("IN GAME STATE > RUN")
         for i in range(self.batch_number):
-            print("IN GAME STATE > RUN")
-            print(i)
-            print(f"batch number: {i}")
+            time_start = time.time()
+            print(f"Batch Number: {i}")
 
             self.data_storing() #run 512 self games 
 
             loss, entropy = self.update()
 
-            self.Neural_Net.save_network('./current_policy.model')
+            self.Neural_Net.save_network('Reinforcement_Learning/current_policy.model')
 
             print("Saved model, line 116")
 
             if (i+1) % self.check == 0:
                 win_ratio = self.policy_evaluate()
-
+                print(f"The Win ratio is : {win_ratio}")
                 if(win_ratio>= 0.55):
-                    self.Neural_Net.save_network('./best_policy.model')
+                    self.Neural_Net.save_network('Reinforcement_Learning/best_policy.model')
                     print("Saved model, line 124")
+                    print("IMPROVEMENT!!!!!!!!!!!!")
+                else:
+                    print("YOU SUCK BALLSSSSSSSSSSSSSSSSSSSSS")
 
                 # if win_ratio > self.win:
                 #     self.win = win_ratio
 
                 #     if (self.win == 1.0 and self.mcts_play < 5000):
                 #         self.mcts_play += 1000
+            
                 #         self.win = 0.0
+            print(f"Batch {i} completed in {time.time()-time_start}")
 
 if __name__ == '__main__':
     training_pipeline = Train_Network()
